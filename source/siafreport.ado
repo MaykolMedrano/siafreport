@@ -82,7 +82,6 @@ capture confirm file "`c(pwd)'\Reportes.xlsm"
 	if _rc!=0 {
 	qui copy "`url'/Reportes.xlsm"  "`c(pwd)'\Reportes.xlsm", replace
 	}
-qui copy "`c(pwd)'\reportes\siafreport_base.pptx"  "`c(pwd)'\reportes\PROGRAMACIÓN_`date_stamp'.pptx", replace
 //**************************
 //#2. IMPORTA Y PREPARA DATA
 //**************************
@@ -211,7 +210,7 @@ collapse (sum) mto_cert_* mto_dev_* mto_pim, by(etiqueta)
 *#5.3. DUPLICA PLANTILLA PARA REPORTE (PPT)
 qui export excel using "`c(pwd)'\reportes\ReporteProgramacionV3_`date_stamp'.xlsx", sheet("Input") sheetreplace firstrow(variables)
 qui save "`c(pwd)'\output\siaf_etiqueta_pliego_`date_stamp'", replace
-
+qui copy "`c(pwd)'\reportes\siafreport_base.pptx"  "`c(pwd)'\reportes\PROGRAMACIÓN_`date_stamp'.pptx", replace
 * MENSAJES
 di in green "ReporteProgramacionV3_`date_stamp' generado exitosamente."
 di as smcl  "Haga clic para abrir el archivo: {browse "`"Reportes.xlsm}"'"
