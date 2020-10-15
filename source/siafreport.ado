@@ -75,7 +75,7 @@ capture confirm file "`c(pwd)'\reportes\siafreport_base.xlsx"
 	qui copy "`url'/siafreport.xlsx"  "`c(pwd)'\reportes\siafreport_base.xlsx", replace
 	}
 capture confirm file "`c(pwd)'\reportes\siafreport_base.ppt"
-	if _rc!=0 {
+	if _rc==0 {
 	qui copy "`url'/siafreport.pptx"  "`c(pwd)'\reportes\siafreport_base.pptx", replace
 	qui copy "`c(pwd)'\reportes\siafreport_base.pptx"  "`c(pwd)'\reportes\PROGRAMACIÓN_`date_stamp'.pptx", replace
 	}
