@@ -78,7 +78,10 @@ capture confirm file "`c(pwd)'\reportes\siafreport_base.pptx"
 	if _rc!=0 {
 	qui copy "`url'/siafreport.pptx"  "`c(pwd)'\reportes\siafreport_base.pptx", replace
 	}
-qui copy "`c(pwd)'\reportes\siafreport_base.pptx"  "`c(pwd)'\reportes\PROGRAMACIÓN_`date_stamp'.pptx", replace
+capture confirm file "`c(pwd)'\reportes\siafreport_base.pptx"
+	if _rc==0 {
+	qui copy "`c(pwd)'\reportes\siafreport_base.pptx"  "`c(pwd)'\reportes\PROGRAMACIÓN_`date_stamp'.pptx", replace
+	}
 capture confirm file "`c(pwd)'\Reportes.xlsm"
 	if _rc!=0 {
 	qui copy "`url'/Reportes.xlsm"  "`c(pwd)'\Reportes.xlsm", replace
