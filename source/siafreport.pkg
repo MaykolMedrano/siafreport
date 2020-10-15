@@ -8,8 +8,8 @@ d KW: report
 d KW: minedu
 d KW: perú
 d
-d Requires: Stata version 15 and Windows 10
+d Requires: Stata version 16 and Windows 10
 d
 d Distribution-Date: 2020
-f siafreport
+f siafreport.ado
 f siafreport.sthlp
