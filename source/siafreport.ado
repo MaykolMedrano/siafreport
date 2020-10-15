@@ -34,7 +34,10 @@ syntax 	name(id="minedu"),[ ///
 */
 
 ****************************************************************************
-
+* Creamos folderes para los files
+capture mkdir input
+capture mkdir output
+capture mkdir reportes
 //********************************
 //#1. REVISA METADATA DE BASE SIAF
 //********************************
@@ -57,30 +60,47 @@ loc siaf_stamp="`siaf_anho'`siaf_mes'`siaf_dia'_`siaf_hora'`siaf_min'"
 
 //#1.3. VERIFICA ANNO VALIDO
 if "`siaf_anho'"!="2020" & "`siaf_anho'"!="2019" {
-	qui di in red "Error: Este programa solo funciona para reportes de SIAF 2020 y 2019." ///
+	di in red "Error: Este programa solo funciona para reportes de SIAF 2020 y 2019." ///
 	" Verificar el nombre de archivo y la extensión."
 	exit
 }
-qui copy "siafreport.xlsx"  "ReporteProgramacionV3_`date_stamp'.xlsx", replace
-qui copy "siafreport.pptx"  "PROGRAMACIÓN_`date_stamp'.pptx", replace
+
+di in green "Generando ReporteProgramacionV3_`date_stamp'..." 
+//#1.4. DESCARGA FILES PARA REPORTE
+loc url "https://github.com/MaykolMedrano/siafreport/raw/master"
+qui copy "`url'/siafreport.xlsx"  "`c(pwd)'\reportes\ReporteProgramacionV3_`date_stamp'.xlsx", replace
+qui copy "`c(pwd)'/`filename'.xlsx"  "`c(pwd)'/input/`filename'.xlsx", replace
+capture confirm file "`c(pwd)'\reportes\siafreport_base.xlsx"
+	if _rc!=0 {
+	qui copy "`url'/siafreport.xlsx"  "`c(pwd)'\reportes\siafreport_base.xlsx", replace
+	}
+capture confirm file "`c(pwd)'\reportes\siafreport_base.ppt"
+	if _rc!=0 {
+	qui copy "`url'/siafreport.pptx"  "`c(pwd)'\reportes\siafreport_base.pptx", replace
+	}
+capture confirm file "`c(pwd)'\Reportes.xlsm"
+	if _rc!=0 {
+	qui copy "`url'/Reportes.xlsm"  "`c(pwd)'\Reportes.xlsm", replace
+	}
+qui copy "`c(pwd)'\reportes\siafreport_base.pptx"  "`c(pwd)'\reportes\PROGRAMACIÓN_`date_stamp'.pptx", replace
 //**************************
 //#2. IMPORTA Y PREPARA DATA
 //**************************
 
 *Importa reporte SIAF
-import excel using "`siaf_filename'.xlsx", firstrow clear
+qui import excel using "`siaf_filename'.xlsx", firstrow clear
 
 *Reemplaza espacios con 0 en clasificador
-replace clasificador=subinstr(clasificador," ","0",.)
+qui replace clasificador=subinstr(clasificador," ","0",.)
 
 *Extrae codigo de generica
-gen cod_generica=real(substr(generica,1,1))
+qui gen cod_generica=real(substr(generica,1,1))
 
 *Genera codigo de ejecutora
-gen cod_ejecutora=real(substr(u_ejecutora,1,3))
+qui gen cod_ejecutora=real(substr(u_ejecutora,1,3))
 
 *Rename devengado
-rename mto_devenga_* mto_dev_*
+qui rename mto_devenga_* mto_dev_*
 
 *Genera certificado y devengado total
 qui egen double mto_cert_tot=rowtotal(mto_cert_01 mto_cert_02 mto_cert_03 mto_cert_04 ///
@@ -97,34 +117,34 @@ qui egen double mto_dev_tot=rowtotal(mto_dev_01 mto_dev_02 mto_dev_03 mto_dev_04
 
 *#3.1. IDENTIFICA BOLSA UPP
 if "`siaf_anho'"=="2020" {
-	gen ind_bolsa=unidad_operativa=="UNIDAD DE PLANIFICACIÓN Y PRESUPUESTO" & sec_func!="0005"
+	qui gen ind_bolsa=unidad_operativa=="UNIDAD DE PLANIFICACIÓN Y PRESUPUESTO" & sec_func!="0005"
 }
 if "`siaf_anho'"=="2019"{
-	gen ind_bolsa=unidad_operativa=="UNIDAD DE PLANIFICACIÓN Y PRESUPUESTO" & sec_func!="0004"	
+	qui gen ind_bolsa=unidad_operativa=="UNIDAD DE PLANIFICACIÓN Y PRESUPUESTO" & sec_func!="0004"	
 }
 
 *#3.2. GENERA ETIQUETAS
-gen etiqueta=.
+qui gen etiqueta=.
 *Remuneraciones y Pensiones
-replace etiqueta=1 if (cod_generica==1 | cod_generica==2)
+qui replace etiqueta=1 if (cod_generica==1 | cod_generica==2)
 *CAS
-replace etiqueta=2 if ///
+qui replace etiqueta=2 if ///
 	substr(clasificador,1,10)=="2.3.02.08."
 *No-CAS
-replace etiqueta=3 if ///
+qui replace etiqueta=3 if ///
 	(cod_generica==3 | cod_generica==4 | cod_generica==5 | cod_generica==7) & ///
 	substr(clasificador,1,10)!="2.3.02.08." & ///
 	clasificador!="2.5.03.01.01.01" & clasificador!="2.7.01.01.01.01"
 *Proyecto
-replace etiqueta=4 if cod_generica==6 & ///
+qui replace etiqueta=4 if cod_generica==6 & ///
 	substr(producto_proyecto,1,1)=="2"
 *Actividad
-replace etiqueta=5 if cod_generica==6 & ///
+qui replace etiqueta=5 if cod_generica==6 & ///
 	substr(producto_proyecto,1,1)=="3"
 *Becas
-replace etiqueta=6 if clasificador=="2.5.03.01.01.01" | clasificador=="2.7.01.01.01.01"
+qui replace etiqueta=6 if clasificador=="2.5.03.01.01.01" | clasificador=="2.7.01.01.01.01"
 *Bolsa UPP
-	replace etiqueta=7 if ind_bolsa==1
+qui replace etiqueta=7 if ind_bolsa==1
 
 lab def etiqueta ///
 	1 "Remuneraciones y Pensiones" ///
@@ -136,22 +156,22 @@ lab def etiqueta ///
 	7 "Bolsa UPP"
 lab val etiqueta etiqueta
 
-drop if etiqueta==7
+qui drop if etiqueta==7
 
 //**************************
 //#4. LIMPIA LLAVE OPERATIVA
 //**************************
 
-tostring cod_ejecutora, gen(cod_ejecutora_str)
+qui tostring cod_ejecutora, gen(cod_ejecutora_str)
 forval j=1/3 {
-	replace cod_ejecutora_str="0"+cod_ejecutora_str if length(cod_ejecutora_str)<3
+	qui replace cod_ejecutora_str="0"+cod_ejecutora_str if length(cod_ejecutora_str)<3
 }
 
-rename unidad_operativa nom_operativa
-rename nombre_oficina nom_oficina
+qui rename unidad_operativa nom_operativa
+qui rename nombre_oficina nom_oficina
 
-gen key_operativa= cod_ejecutora_str if cod_ejecutora_str!="024" & cod_ejecutora_str!="026"
-replace key_operativa = cod_ejecutora_str + " - " + nom_operativa if cod_ejecutora_str =="024"| cod_ejecutora_str=="026"
+qui gen key_operativa= cod_ejecutora_str if cod_ejecutora_str!="024" & cod_ejecutora_str!="026"
+qui replace key_operativa = cod_ejecutora_str + " - " + nom_operativa if cod_ejecutora_str =="024"| cod_ejecutora_str=="026"
 
 local agrp "Á É Í Ó Ú á é í ó ú"
 local bgrp "A E I O U a e i o u"
@@ -159,7 +179,7 @@ local n : word count `agrp'
 forvalues i = 1/`n' {
 	local a : word `i' of `agrp'
 	local b : word `i' of `bgrp'
-	replace key_operativa=upper(ustrtrim(strtrim(subinstr(key_operativa,"`a'","`b'",.))))
+	qui replace key_operativa=upper(ustrtrim(strtrim(subinstr(key_operativa,"`a'","`b'",.))))
 }
 
 *Mueve duplicados (UE 024 y 026)
@@ -167,14 +187,14 @@ forvalues i = 1/`n' {
 /*NOTA: UPP esta registrada en UE 024 y 026, pero estamos excluyendo el monto
 correspondiente a 026 de la base porque corresponde a transferencias
 pendientes (bolsa).*/
-replace key_operativa="024 - UNIDAD DE PLANIFICACION Y PRESUPUESTO" if key_operativa=="026 - UNIDAD DE PLANIFICACION Y PRESUPUESTO"
-replace key_operativa="026 - UNIDAD DE ESTADISTICA" if key_operativa=="024 - UNIDAD DE ESTADISTICA"
-replace key_operativa="026 - OFICINA DE DEFENSA NACIONAL Y DE GESTION DEL RIESGO DE DESASTRES" if key_operativa=="024 - OFICINA DE DEFENSA NACIONAL Y DE GESTION DEL RIESGO DE DESASTRES"
-replace key_operativa="026 - OFICINA DE TECNOLOGIAS DE LA INFORMACION Y COMUNICACION" if key_operativa=="024 - OFICINA DE TECNOLOGIAS DE LA INFORMACION Y COMUNICACION"
-replace key_operativa="024 - OFICINA GENERAL DE ADMINISTRACION" if key_operativa=="026 - OFICINA GENERAL DE ADMINISTRACION"
-replace key_operativa="024 - OFICINA GENERAL DE COMUNICACIONES" if key_operativa=="026 - OFICINA GENERAL DE COMUNICACIONES"
-replace key_operativa="024 - OFICINA GENERAL DE RECURSOS HUMANOS" if key_operativa=="026 - OFICINA GENERAL DE RECURSOS HUMANOS"
-replace key_operativa="024 - DIRECCION GENERAL DE GESTION DESCENTRALIZADA" if key_operativa=="026 - DIRECCION GENERAL DE GESTION DESCENTRALIZADA"
+qui replace key_operativa="024 - UNIDAD DE PLANIFICACION Y PRESUPUESTO" if key_operativa=="026 - UNIDAD DE PLANIFICACION Y PRESUPUESTO"
+qui replace key_operativa="026 - UNIDAD DE ESTADISTICA" if key_operativa=="024 - UNIDAD DE ESTADISTICA"
+qui replace key_operativa="026 - OFICINA DE DEFENSA NACIONAL Y DE GESTION DEL RIESGO DE DESASTRES" if key_operativa=="024 - OFICINA DE DEFENSA NACIONAL Y DE GESTION DEL RIESGO DE DESASTRES"
+qui replace key_operativa="026 - OFICINA DE TECNOLOGIAS DE LA INFORMACION Y COMUNICACION" if key_operativa=="024 - OFICINA DE TECNOLOGIAS DE LA INFORMACION Y COMUNICACION"
+qui replace key_operativa="024 - OFICINA GENERAL DE ADMINISTRACION" if key_operativa=="026 - OFICINA GENERAL DE ADMINISTRACION"
+qui replace key_operativa="024 - OFICINA GENERAL DE COMUNICACIONES" if key_operativa=="026 - OFICINA GENERAL DE COMUNICACIONES"
+qui replace key_operativa="024 - OFICINA GENERAL DE RECURSOS HUMANOS" if key_operativa=="026 - OFICINA GENERAL DE RECURSOS HUMANOS"
+qui replace key_operativa="024 - DIRECCION GENERAL DE GESTION DESCENTRALIZADA" if key_operativa=="026 - DIRECCION GENERAL DE GESTION DESCENTRALIZADA"
 
 //********************
 //#5. COLAPSA Y GUARDA
@@ -189,8 +209,15 @@ format mto_* %16.0gc
 collapse (sum) mto_cert_* mto_dev_* mto_pim, by(etiqueta)
 
 *#5.3. DUPLICA PLANTILLA PARA REPORTE (PPT)
-export excel using "ReporteProgramacionV3_`date_stamp'.xlsx", sheet("Input") sheetreplace firstrow(variables)
-qui save "siaf_etiqueta_pliego_`date_stamp'", replace
+qui export excel using "`c(pwd)'\reportes\ReporteProgramacionV3_`date_stamp'.xlsx", sheet("Input") sheetreplace firstrow(variables)
+qui save "`c(pwd)'\output\siaf_etiqueta_pliego_`date_stamp'", replace
 
-di in green "ReporteProgramacionV3_`date_stamp' generado exitosamente"
+* MENSAJES
+di in green "ReporteProgramacionV3_`date_stamp' generado exitosamente."
+di as smcl  "Haga clic para abrir el archivo: {browse "`"Reportes.xlsm}"'"
+di as smcl  "Copie las siguientes rutas al archivo Reportes.xlsm y actualize reporte."
+di as smcl 	"Ruta 1: ""{text:`c(pwd)'\reportes\PROGRAMACIÓN_`date_stamp'.pptx}"
+di as smcl 	"Ruta 2: ""{text:`c(pwd)'\reportes\siafreport_base.xlsx}"
+di as smcl 	"Ruta 3: ""{text:`c(pwd)'\reportes\ReporteProgramacionV3_`date_stamp'.xlsx}"
+di as smcl 	"{text:*Su archivo `siaf_filename'.xlsx se ha movido al folder input.}"
 end
